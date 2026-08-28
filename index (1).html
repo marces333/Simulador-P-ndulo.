@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Péndulo | Certificación en Péndulo Hebreo</title>
+<style>
+  :root{
+    --crema:#f7f2e9;
+    --crema-2:#efe6d5;
+    --salvia:#8a9a7e;
+    --salvia-oscuro:#5f7256;
+    --terracota:#c1704a;
+    --terracota-2:#a85c3a;
+    --texto:#4a4238;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: linear-gradient(180deg, var(--crema) 0%, var(--crema-2) 100%);
+    color: var(--texto);
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:520px;margin:0 auto;}
+  header{text-align:center;margin-bottom:24px;}
+  header .leaf{font-size:32px;display:block;margin-bottom:6px;opacity:.8;}
+  h1{
+    font-size:1.5rem;
+    color:var(--salvia-oscuro);
+    margin:0 0 8px;
+    font-weight:600;
+  }
+  header p{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color:var(--texto);
+    opacity:.75;
+    font-size:.92rem;
+    margin:0;
+    line-height:1.5;
+  }
+  .card{
+    background:#fffdf9;
+    border-radius:18px;
+    padding:22px 20px;
+    box-shadow:0 8px 24px rgba(138,113,74,0.10);
+    border:1px solid rgba(138,154,126,0.25);
+    margin-bottom:18px;
+  }
+  label{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:.85rem;
+    font-weight:700;
+    color:var(--salvia-oscuro);
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    display:block;
+    margin-bottom:8px;
+  }
+  input[type="text"]{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1.5px solid rgba(138,154,126,0.4);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:.95rem;
+    background:var(--crema);
+    color:var(--texto);
+  }
+  input[type="text"]:focus{outline:none; border-color:var(--terracota);}
+  .stage{
+    position:relative;
+    height:280px;
+    display:flex;
+    justify-content:center;
+    padding-top:10px;
+    margin:18px 0 6px;
+    overflow:hidden;
+  }
+  .anchor{
+    width:14px;height:14px;
+    background: var(--terracota-2);
+    border-radius:50%;
+    position:absolute;
+    top:6px;
+    box-shadow:0 0 0 4px rgba(193,112,74,0.15);
+    z-index:2;
+  }
+  .string{
+    position:absolute;
+    top:13px;
+    width:2px;
+    height:180px;
+    background: linear-gradient(to bottom, rgba(138,113,74,0.5), rgba(138,113,74,0.25));
+    transform-origin: top center;
+    z-index:1;
+  }
+  .bob{
+    position:absolute;
+    top:189px;
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #e8b98f, var(--terracota) 60%, var(--terracota-2));
+    box-shadow: 0 4px 12px rgba(161,92,58,0.4);
+    transform-origin: top center;
+    z-index:1;
+  }
+  .idle .string, .idle .bob{ animation: none; }
+
+  @keyframes swingIdle{
+    0%,100%{ transform: rotate(-2deg); }
+    50%{ transform: rotate(2deg); }
+  }
+  .estado-idle .string, .estado-idle .bob{
+    animation: swingIdle 3.5s ease-in-out infinite;
+  }
+
+  @keyframes swingSi{
+    0%{ transform: rotate(0deg); }
+    15%{ transform: rotate(-38deg); }
+    35%{ transform: rotate(34deg); }
+    50%{ transform: rotate(-30deg); }
+    65%{ transform: rotate(26deg); }
+    80%{ transform: rotate(-16deg); }
+    92%{ transform: rotate(8deg); }
+    100%{ transform: rotate(0deg); }
+  }
+  .estado-si .string, .estado-si .bob{
+    animation: swingSi 2.6s ease-in-out 1;
+  }
+
+  @keyframes swingNo{
+    0%{ transform: rotate(0deg) scaleX(1); }
+    10%{ transform: rotate(0deg) translateX(0); }
+    100%{ transform: rotate(0deg); }
+  }
+  .estado-no .bob{
+    animation: bobNo 2.6s ease-in-out 1;
+  }
+  .estado-no .string{
+    animation: stringNo 2.6s ease-in-out 1;
+  }
+  @keyframes bobNo{
+    0%{ margin-left:0; }
+    15%{ margin-left:-46px; }
+    35%{ margin-left:42px; }
+    50%{ margin-left:-36px; }
+    65%{ margin-left:32px; }
+    80%{ margin-left:-18px; }
+    92%{ margin-left:10px; }
+    100%{ margin-left:0; }
+  }
+  @keyframes stringNo{
+    0%{ transform: skewX(0deg); }
+    15%{ transform: skewX(11deg); }
+    35%{ transform: skewX(-10deg); }
+    50%{ transform: skewX(9deg); }
+    65%{ transform: skewX(-8deg); }
+    80%{ transform: skewX(4deg); }
+    100%{ transform: skewX(0deg); }
+  }
+
+  @keyframes swingNeutro{
+    0%{ transform: rotate(0deg); }
+    12%{ transform: rotate(-10deg); }
+    25%{ transform: rotate(6deg); }
+    37%{ transform: rotate(-8deg); }
+    50%{ transform: rotate(5deg); }
+    62%{ transform: rotate(-4deg); }
+    75%{ transform: rotate(3deg); }
+    87%{ transform: rotate(-2deg); }
+    100%{ transform: rotate(0deg); }
+  }
+  .estado-neutro .string, .estado-neutro .bob{
+    animation: swingNeutro 2.8s ease-in-out 1;
+  }
+
+  .btn-principal{
+    display:block;
+    width:100%;
+    background: var(--terracota);
+    color:#fff;
+    border:none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:1rem;
+    font-weight:600;
+    padding:14px;
+    border-radius:12px;
+    cursor:pointer;
+    margin-top:16px;
+    transition: background .2s ease, transform .15s ease;
+  }
+  .btn-principal:hover{ background: var(--terracota-2); }
+  .btn-principal:active{ transform: scale(0.98); }
+  .btn-principal:disabled{ opacity:.55; cursor:not-allowed; }
+
+  #resultado{
+    display:none;
+    text-align:center;
+    animation: fadeIn .4s ease;
+  }
+  #resultado.visible{display:block;}
+  @keyframes fadeIn{
+    from{opacity:0; transform:translateY(6px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .resultado-badge{
+    display:inline-block;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight:700;
+    font-size:1.3rem;
+    padding:8px 22px;
+    border-radius:999px;
+    margin-bottom:10px;
+  }
+  .badge-si{ background: rgba(138,154,126,0.18); color: var(--salvia-oscuro); }
+  .badge-no{ background: rgba(193,112,74,0.16); color: var(--terracota-2); }
+  .badge-neutro{ background: rgba(74,66,56,0.10); color: var(--texto); }
+  .resultado-texto{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:.92rem;
+    line-height:1.55;
+    max-width:400px;
+    margin:0 auto;
+  }
+  .nota{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:.82rem;
+    color:var(--salvia-oscuro);
+    text-align:center;
+    line-height:1.5;
+    margin:0;
+  }
+  footer{
+    text-align:center;
+    margin-top:20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:.76rem;
+    color:var(--texto);
+    opacity:.55;
+    line-height:1.6;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="leaf">🌿</span>
+    <h1>Simulador de Péndulo</h1>
+    <p>Bono exclusivo de tu Certificación en Péndulo Hebreo.<br>Practica aquí mismo mientras consigues o activas tu péndulo físico.</p>
+  </header>
+
+  <div class="card">
+    <label for="pregunta">Escribe tu pregunta (formulada en sí/no)</label>
+    <input type="text" id="pregunta" placeholder="Ej: ¿Es momento de soltar esta situación?">
+
+    <div class="stage" id="stage">
+      <div class="anchor"></div>
+      <div class="string" id="string"></div>
+      <div class="bob" id="bob"></div>
+    </div>
+
+    <button class="btn-principal" id="btnPreguntar">Sostener el péndulo y preguntar</button>
+  </div>
+
+  <div class="card" id="resultado">
+    <span class="resultado-badge" id="badge"></span>
+    <p class="resultado-texto" id="texto-resultado"></p>
+  </div>
+
+  <p class="nota">Respira profundo antes de preguntar y sostén tu intención con calma. Este simulador te ayuda a practicar la lectura de movimientos mientras consigues tu péndulo físico.</p>
+
+  <footer>
+    Este simulador es una herramienta de práctica y aprendizaje.<br>Con tu péndulo físico, la lectura depende de tu propia conexión y calibración personal.
+  </footer>
+
+</div>
+
+<script>
+const btn = document.getElementById('btnPreguntar');
+const stage = document.getElementById('stage');
+const stringEl = document.getElementById('string');
+const bobEl = document.getElementById('bob');
+const resultado = document.getElementById('resultado');
+const badge = document.getElementById('badge');
+const textoResultado = document.getElementById('texto-resultado');
+const preguntaInput = document.getElementById('pregunta');
+
+stage.classList.add('estado-idle');
+
+const respuestas = [
+  {
+    clase: 'si',
+    badgeClase: 'badge-si',
+    label: 'SÍ',
+    texto: 'El péndulo se movió de adelante hacia atrás, un balanceo firme y directo. Esta es una de las lecturas más comunes de afirmación en la tradición del péndulo.'
+  },
+  {
+    clase: 'no',
+    badgeClase: 'badge-no',
+    label: 'NO',
+    texto: 'El péndulo se movió de lado a lado. En la mayoría de las calibraciones, este balanceo horizontal se interpreta como una negación clara.'
+  },
+  {
+    clase: 'neutro',
+    badgeClase: 'badge-neutro',
+    label: 'RESPUESTA POCO CLARA',
+    texto: 'El movimiento fue irregular y sin una dirección firme. Suele indicar que la pregunta necesita reformularse, o que aún no es el momento de tener claridad sobre esto.'
+  }
+];
+
+btn.addEventListener('click', () => {
+  if(!preguntaInput.value.trim()){
+    preguntaInput.focus();
+    preguntaInput.style.borderColor = '#c1704a';
+    setTimeout(()=> preguntaInput.style.borderColor = '', 1200);
+    return;
+  }
+
+  btn.disabled = true;
+  resultado.classList.remove('visible');
+
+  stage.className = 'stage';
+  void stage.offsetWidth;
+
+  const opcion = respuestas[Math.floor(Math.random() * respuestas.length)];
+  stage.classList.add('estado-' + opcion.clase);
+
+  setTimeout(() => {
+    badge.className = 'resultado-badge ' + opcion.badgeClase;
+    badge.textContent = opcion.label;
+    textoResultado.textContent = opcion.texto;
+    resultado.classList.add('visible');
+    stage.className = 'stage estado-idle';
+    btn.disabled = false;
+  }, 2700);
+});
+</script>
+
+</body>
+</html>
